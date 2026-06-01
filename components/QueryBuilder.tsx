@@ -4,6 +4,8 @@ import { useQueryStore } from '@/store/queryStore';
 import { ConditionGroup } from './query-builder/ConditionGroup';
 import { QueryPreview } from './preview/QueryPreview';
 import { ResultsPanel } from './results/ResultsPanel';
+import { Toolbar } from './toolbar/Toolbar';
+import { HistoryPanel } from './toolbar/HistoryPanel';
 import { MOCK_DATA } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
@@ -12,17 +14,22 @@ const TABS = [
   { id: 'preview', label: 'Preview' },
   { id: 'results', label: 'Results' },
   { id: 'json', label: 'JSON' },
+  { id: 'history', label: 'History' },
 ] as const;
 
 export function QueryBuilder() {
-  const { root, activeTab, setActiveTab, results, runQuery } = useQueryStore();
+  const { root, activeTab, setActiveTab, results, history, runQuery, undo } = useQueryStore();
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       runQuery(MOCK_DATA);
     }
-  }, [runQuery]);
+  }, [undo, runQuery]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -31,6 +38,9 @@ export function QueryBuilder() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Toolbar */}
+      <Toolbar />
+
       {/* Tabs */}
       <div className="flex items-center border-b border-border gap-0">
         {TABS.map(tab => (
@@ -55,6 +65,11 @@ export function QueryBuilder() {
                 {results.length}
               </span>
             )}
+            {tab.id === 'history' && history.length > 0 && (
+              <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                {history.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -73,6 +88,7 @@ export function QueryBuilder() {
             </pre>
           </div>
         )}
+        {activeTab === 'history' && <HistoryPanel />}
       </div>
     </div>
   );
