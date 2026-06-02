@@ -1,72 +1,48 @@
 'use client';
-import { useEffect, useCallback } from 'react';
 import { useQueryStore } from '@/store/queryStore';
-import { ConditionGroup } from './query-builder/ConditionGroup';
 import { QueryPreview } from './preview/QueryPreview';
 import { ResultsPanel } from './results/ResultsPanel';
-import { Toolbar } from './toolbar/Toolbar';
 import { HistoryPanel } from './toolbar/HistoryPanel';
-import { MOCK_DATA } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 const TABS = [
-  { id: 'builder', label: 'Builder' },
-  { id: 'preview', label: 'Preview' },
-  { id: 'results', label: 'Results' },
-  { id: 'json', label: 'JSON' },
-  { id: 'history', label: 'History' },
-] as const;
+  { id: 'preview' as const, label: 'Preview' },
+  { id: 'results' as const, label: 'Results' },
+  { id: 'json' as const, label: 'JSON' },
+  { id: 'history' as const, label: 'History' },
+];
 
 export function QueryBuilder() {
-  const { root, activeTab, setActiveTab, results, history, runQuery, undo } = useQueryStore();
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      undo();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      runQuery(MOCK_DATA);
-    }
-  }, [undo, runQuery]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  const { activeTab, setActiveTab, results, history, root } = useQueryStore();
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Toolbar */}
-      <Toolbar />
-
+    <div className="flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex items-center border-b border-border gap-0">
+      <div className="flex border-b border-border shrink-0">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors',
               activeTab === tab.id
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-accent text-foreground'
+                : 'border-transparent text-subtle hover:text-muted-foreground'
             )}
           >
             {tab.label}
             {tab.id === 'results' && results !== null && (
               <span className={cn(
-                'ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-medium',
+                'ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium',
                 results.length > 0
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
-                  : 'bg-muted text-muted-foreground'
+                  ? 'bg-accent-subtle text-accent'
+                  : 'bg-surface-raised text-subtle'
               )}>
                 {results.length}
               </span>
             )}
             {tab.id === 'history' && history.length > 0 && (
-              <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised text-subtle font-medium">
                 {history.length}
               </span>
             )}
@@ -75,15 +51,12 @@ export function QueryBuilder() {
       </div>
 
       {/* Tab content */}
-      <div className="min-h-64">
-        {activeTab === 'builder' && (
-          <ConditionGroup group={root} depth={0} />
-        )}
+      <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'preview' && <QueryPreview />}
         {activeTab === 'results' && <ResultsPanel />}
         {activeTab === 'json' && (
-          <div className="rounded-lg border border-border bg-muted/50 overflow-hidden">
-            <pre className="p-4 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed text-foreground max-h-[500px] overflow-y-auto">
+          <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
+            <pre className="p-4 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed text-accent-text max-h-[500px] overflow-y-auto">
               {JSON.stringify(root, null, 2)}
             </pre>
           </div>
