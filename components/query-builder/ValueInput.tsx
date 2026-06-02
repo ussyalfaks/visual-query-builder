@@ -13,14 +13,14 @@ interface Props {
 
 export const ValueInput = memo(function ValueInput({ rule, field, error, onChange }: Props) {
   const base = cn(
-    'h-8 rounded-md border bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors',
-    error ? 'border-destructive focus:ring-destructive' : 'border-input'
+    'h-8 rounded border bg-background px-2.5 text-xs font-mono text-accent-text focus:outline-none focus:ring-1 transition-colors',
+    error
+      ? 'border-destructive/60 focus:ring-destructive'
+      : 'border-border focus:ring-accent focus:border-accent'
   );
 
   if (NO_VALUE_OPERATORS.includes(rule.operator)) {
-    return (
-      <span className="text-xs text-muted-foreground italic px-2 self-center">no value</span>
-    );
+    return <span className="text-xs text-subtle italic px-2 self-center">no value</span>;
   }
 
   if (field.type === 'enum') {
@@ -37,7 +37,7 @@ export const ValueInput = memo(function ValueInput({ rule, field, error, onChang
     }
     return (
       <select
-        className={cn(base, 'flex-1 min-w-0')}
+        className={cn(base, 'flex-1 min-w-0 text-accent-text')}
         value={rule.value}
         onChange={e => onChange(e.target.value)}
       >
