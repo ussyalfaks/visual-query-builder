@@ -16,7 +16,7 @@ export interface QueryStore {
   collapsed: Set<string>;
   presets: Preset[];
   activeFormat: 'sql' | 'mongo';
-  activeTab: 'builder' | 'preview' | 'results' | 'history' | 'json';
+  activeTab: 'preview' | 'results' | 'history' | 'json';
 
   // Group actions
   setLogic: (groupId: string, logic: 'AND' | 'OR') => void;
@@ -136,7 +136,7 @@ export const useQueryStore = create<QueryStore>()(
       },
     ],
     activeFormat: 'sql',
-    activeTab: 'builder',
+    activeTab: 'preview',
 
     snapshot: () => {
       set(state => {
