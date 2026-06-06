@@ -7,11 +7,14 @@ import { MOCK_DATA } from '@/data/mockData';
 type SortDir = 'asc' | 'desc';
 
 export function ResultsPanel() {
-  const { results, isRunning, runQuery } = useQueryStore();
+  const { results, isRunning, runQuery, schema, customData } = useQueryStore();
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 8;
+
+  const activeData = customData ?? MOCK_DATA;
+  const cols = schema.map(f => ({ key: f.key, label: f.label }));
 
   const handleSort = (field: string) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -30,36 +33,58 @@ export function ResultsPanel() {
   const paged = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
 
-  const COLS = ['name', 'age', 'status', 'country', 'purchases', 'score', 'plan'];
   const STATUS_COLORS: Record<string, string> = {
-    active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    inactive: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-    banned: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    active:    'bg-[#064e3b] text-[#6ee7b7]',
+    inactive:  'bg-surface-raised text-subtle',
+    pending:   'bg-[#451a03] text-[#fcd34d]',
+    banned:    'bg-[#450a0a] text-[#fca5a5]',
+    cancelled: 'bg-[#450a0a] text-[#fca5a5]',
+    shipped:   'bg-[#1e3a5f] text-[#93c5fd]',
+    delivered: 'bg-[#064e3b] text-[#6ee7b7]',
   };
-  const PLAN_COLORS: Record<string, string> = {
-    free: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    pro: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    enterprise: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  };
+
+  function renderCell(col: { key: string }, row: Record<string, unknown>) {
+    const val = row[col.key];
+    const str = val === null || val === undefined ? '—' : String(val);
+    const fieldSchema = schema.find(f => f.key === col.key);
+
+    if (fieldSchema?.type === 'enum' && STATUS_COLORS[str]) {
+      return (
+        <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${STATUS_COLORS[str]}`}>
+          {str}
+        </span>
+      );
+    }
+    if (fieldSchema?.type === 'boolean') {
+      return (
+        <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${val ? 'bg-[#064e3b] text-[#6ee7b7]' : 'bg-surface-raised text-subtle'}`}>
+          {str}
+        </span>
+      );
+    }
+    if (fieldSchema?.type === 'number') {
+      return <span className="font-mono text-muted-foreground">{str}</span>;
+    }
+    return <span className="font-mono text-muted-foreground truncate max-w-40 block">{str}</span>;
+  }
 
   if (isRunning) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
-        <DatabaseZap className="h-10 w-10 animate-pulse" />
-        <p className="text-sm">Executing query...</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-subtle">
+        <DatabaseZap className="h-10 w-10 animate-pulse text-accent" />
+        <p className="text-sm">Executing query…</p>
       </div>
     );
   }
 
   if (results === null) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-subtle">
         <Database className="h-10 w-10" />
         <p className="text-sm">Run the query to see results</p>
         <button
-          onClick={() => runQuery(MOCK_DATA)}
-          className="text-xs border border-border rounded-md px-4 py-2 hover:bg-muted transition-colors"
+          onClick={() => runQuery(activeData)}
+          className="text-xs border border-border rounded-md px-4 py-2 hover:bg-surface-raised transition-colors text-muted-foreground"
         >
           Run query
         </button>
@@ -72,26 +97,28 @@ export function ResultsPanel() {
       {/* Summary bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{results.length}</span>
-          <span className="text-sm text-muted-foreground">of {MOCK_DATA.length} records matched</span>
+          <span className="text-sm font-semibold text-foreground">{results.length}</span>
+          <span className="text-sm text-muted-foreground">of {activeData.length} records matched</span>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-          results.length === 0 ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+        <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
+          results.length === 0
+            ? 'bg-[#450a0a] text-[#fca5a5]'
+            : 'bg-accent-subtle text-accent'
         }`}>
-          {Math.round(results.length / MOCK_DATA.length * 100)}% match rate
+          {activeData.length > 0 ? Math.round(results.length / activeData.length * 100) : 0}% match rate
         </span>
-        <div className="flex gap-2 ml-auto">
-          {Array.from({ length: MOCK_DATA.length }, (_, i) => (
+        <div className="flex gap-1 ml-auto flex-wrap max-w-30">
+          {Array.from({ length: Math.min(activeData.length, 40) }, (_, i) => (
             <div
               key={i}
-              className={`h-1.5 w-1.5 rounded-full ${i < results.length ? 'bg-green-500' : 'bg-muted-foreground/20'}`}
+              className={`h-1.5 w-1.5 rounded-full ${i < Math.round(results.length / activeData.length * Math.min(activeData.length, 40)) ? 'bg-accent' : 'bg-surface-raised'}`}
             />
           ))}
         </div>
       </div>
 
       {results.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground border border-dashed rounded-lg">
+        <div className="flex flex-col items-center justify-center py-12 gap-2 text-subtle border border-dashed border-border rounded-lg">
           <Database className="h-8 w-8" />
           <p className="text-sm">No records matched your query</p>
         </div>
@@ -99,21 +126,22 @@ export function ResultsPanel() {
         <>
           <div className="rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    {COLS.map(col => (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-surface-raised">
+                    {cols.map(col => (
                       <th
-                        key={col}
-                        className="text-left px-3 py-2.5 font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors whitespace-nowrap select-none"
-                        onClick={() => handleSort(col)}
+                        key={col.key}
+                        className="text-left px-3 py-2.5 font-semibold text-subtle uppercase tracking-wider cursor-pointer hover:text-muted-foreground transition-colors whitespace-nowrap select-none text-[10px]"
+                        onClick={() => handleSort(col.key)}
                       >
                         <div className="flex items-center gap-1">
-                          <span className="capitalize">{col}</span>
-                          {sortField === col
-                            ? sortDir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-                            : <span className="h-3 w-3" />
-                          }
+                          <span>{col.label}</span>
+                          {sortField === col.key
+                            ? sortDir === 'asc'
+                              ? <ChevronUp className="h-3 w-3" />
+                              : <ChevronDown className="h-3 w-3" />
+                            : <span className="h-3 w-3 inline-block" />}
                         </div>
                       </th>
                     ))}
@@ -121,29 +149,12 @@ export function ResultsPanel() {
                 </thead>
                 <tbody>
                   {paged.map((row, i) => (
-                    <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2.5 font-medium">{String(row.name)}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{String(row.age)}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[String(row.status)] ?? ''}`}>
-                          {String(row.status)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{String(row.country)}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{String(row.purchases)}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${row.score}%` }} />
-                          </div>
-                          <span className="text-muted-foreground">{String(row.score)}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_COLORS[String(row.plan)] ?? ''}`}>
-                          {String(row.plan)}
-                        </span>
-                      </td>
+                    <tr key={i} className="border-t border-border hover:bg-surface-raised transition-colors">
+                      {cols.map(col => (
+                        <td key={col.key} className="px-3 py-2.5">
+                          {renderCell(col, row)}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -152,22 +163,20 @@ export function ResultsPanel() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Page {page + 1} of {totalPages}
-              </span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-subtle">Page {page + 1} of {totalPages}</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage(p => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="px-3 py-1.5 rounded-md border border-border text-xs disabled:opacity-40 hover:bg-muted transition-colors"
+                  className="px-3 py-1.5 rounded border border-border text-muted-foreground disabled:opacity-30 hover:bg-surface-raised transition-colors"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                   disabled={page === totalPages - 1}
-                  className="px-3 py-1.5 rounded-md border border-border text-xs disabled:opacity-40 hover:bg-muted transition-colors"
+                  className="px-3 py-1.5 rounded border border-border text-muted-foreground disabled:opacity-30 hover:bg-surface-raised transition-colors"
                 >
                   Next
                 </button>

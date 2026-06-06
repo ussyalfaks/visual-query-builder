@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { enableMapSet } from 'immer';
+
+enableMapSet();
 import type { QueryGroup, QueryRule, Preset, FieldSchema } from '@/lib/types';
 import { SCHEMA, OPERATORS_BY_TYPE } from '@/lib/schema';
 import { validateGroup } from '@/lib/validators';
@@ -16,7 +19,7 @@ export interface QueryStore {
   collapsed: Set<string>;
   presets: Preset[];
   activeFormat: 'sql' | 'mongo';
-  activeTab: 'builder' | 'preview' | 'results' | 'history' | 'json';
+  activeTab: 'preview' | 'results' | 'history' | 'json';
 
   // Group actions
   setLogic: (groupId: string, logic: 'AND' | 'OR') => void;
@@ -49,6 +52,9 @@ export interface QueryStore {
   // Import/export
   importQuery: (jsonStr: string) => void;
   resetQuery: () => void;
+  setSchema: (schema: FieldSchema[]) => void;
+  customData: Record<string, unknown>[] | null;
+  setCustomData: (data: Record<string, unknown>[]) => void;
 }
 
 function makeDefaultRule(schema: FieldSchema[]): QueryRule {
@@ -100,6 +106,7 @@ export const useQueryStore = create<QueryStore>()(
     errors: {},
     history: [],
     results: null,
+    customData: null,
     isRunning: false,
     collapsed: new Set<string>(),
     presets: [
@@ -136,7 +143,7 @@ export const useQueryStore = create<QueryStore>()(
       },
     ],
     activeFormat: 'sql',
-    activeTab: 'builder',
+    activeTab: 'preview',
 
     snapshot: () => {
       set(state => {
@@ -168,7 +175,6 @@ export const useQueryStore = create<QueryStore>()(
         const r = g.rules.find(r => r.id === ruleId);
         if (!r) return;
         Object.assign(r, patch);
-        // Reset value when field changes
         if (patch.field) {
           r.value = '';
           const fieldSchema = state.schema.find(f => f.key === patch.field);
@@ -176,8 +182,13 @@ export const useQueryStore = create<QueryStore>()(
             const validOps = OPERATORS_BY_TYPE[fieldSchema.type] || [];
             if (!validOps.includes(r.operator)) r.operator = validOps[0];
           }
+          delete state.errors[ruleId];
+        } else if (patch.operator) {
+          r.value = '';
+          delete state.errors[ruleId];
+        } else {
+          state.errors = validateGroup(state.root, state.schema);
         }
-        state.errors = validateGroup(state.root, state.schema);
       });
     },
 
@@ -309,6 +320,20 @@ export const useQueryStore = create<QueryStore>()(
         state.errors = {};
         state.results = null;
       });
+    },
+
+    setSchema: (schema) => {
+      set(state => {
+        state.schema = schema;
+        state.root = makeRootGroup(schema);
+        state.errors = {};
+        state.results = null;
+        state.history = [];
+      });
+    },
+
+    setCustomData: (data) => {
+      set(state => { state.customData = data; });
     },
   }))
 );

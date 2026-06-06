@@ -13,14 +13,14 @@ interface Props {
 
 export const ValueInput = memo(function ValueInput({ rule, field, error, onChange }: Props) {
   const base = cn(
-    'h-8 rounded-md border bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors',
-    error ? 'border-destructive focus:ring-destructive' : 'border-input'
+    'h-8 rounded border bg-background px-2.5 text-xs font-mono text-accent-text focus:outline-none focus:ring-1 transition-colors',
+    error
+      ? 'border-destructive/60 focus:ring-destructive'
+      : 'border-border focus:ring-accent focus:border-accent'
   );
 
   if (NO_VALUE_OPERATORS.includes(rule.operator)) {
-    return (
-      <span className="text-xs text-muted-foreground italic px-2 self-center">no value</span>
-    );
+    return <span className="text-xs text-subtle italic px-2 self-center">no value</span>;
   }
 
   if (field.type === 'enum') {
@@ -37,7 +37,7 @@ export const ValueInput = memo(function ValueInput({ rule, field, error, onChang
     }
     return (
       <select
-        className={cn(base, 'flex-1 min-w-0')}
+        className={cn(base, 'flex-1 min-w-0 text-accent-text')}
         value={rule.value}
         onChange={e => onChange(e.target.value)}
       >
@@ -51,14 +51,25 @@ export const ValueInput = memo(function ValueInput({ rule, field, error, onChang
 
   if (field.type === 'date') {
     if (rule.operator === 'between') {
+      const parts = rule.value ? rule.value.split(',').map(s => s.trim()) : [];
+      const start = parts[0] ?? '';
+      const end = parts[1] ?? '';
       return (
-        <input
-          type="text"
-          className={cn(base, 'flex-1 min-w-0')}
-          placeholder="2024-01-01, 2024-12-31"
-          value={rule.value}
-          onChange={e => onChange(e.target.value)}
-        />
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <input
+            type="date"
+            className={cn(base, 'flex-1 min-w-0')}
+            value={start}
+            onChange={e => onChange([e.target.value, end].join(','))}
+          />
+          <span className="text-xs text-subtle shrink-0">to</span>
+          <input
+            type="date"
+            className={cn(base, 'flex-1 min-w-0')}
+            value={end}
+            onChange={e => onChange([start, e.target.value].join(','))}
+          />
+        </div>
       );
     }
     return (
@@ -73,14 +84,27 @@ export const ValueInput = memo(function ValueInput({ rule, field, error, onChang
 
   if (field.type === 'number') {
     if (rule.operator === 'between') {
+      const parts = rule.value ? rule.value.split(',').map(s => s.trim()) : [];
+      const from = parts[0] ?? '';
+      const to = parts[1] ?? '';
       return (
-        <input
-          type="text"
-          className={cn(base, 'flex-1 min-w-0')}
-          placeholder="18, 65"
-          value={rule.value}
-          onChange={e => onChange(e.target.value)}
-        />
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <input
+            type="number"
+            className={cn(base, 'w-24')}
+            placeholder="min"
+            value={from}
+            onChange={e => onChange([e.target.value, to].join(','))}
+          />
+          <span className="text-xs text-subtle shrink-0">to</span>
+          <input
+            type="number"
+            className={cn(base, 'w-24')}
+            placeholder="max"
+            value={to}
+            onChange={e => onChange([from, e.target.value].join(','))}
+          />
+        </div>
       );
     }
     return (
