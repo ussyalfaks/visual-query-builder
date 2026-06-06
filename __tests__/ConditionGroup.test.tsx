@@ -6,7 +6,6 @@ import { useQueryStore } from '@/store/queryStore';
 
 enableMapSet();
 
-// DnD Kit needs browser pointer APIs unavailable in jsdom — mock them
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   closestCenter: vi.fn(),

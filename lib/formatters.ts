@@ -1,7 +1,7 @@
 import type { QueryGroup, QueryRule, FieldSchema } from './types';
 
 function escapeStr(val: string): string {
-  return val.replace(/'/g, "''");
+  return (val ?? '').replace(/'/g, "''");
 }
 
 function fmtSQLVal(val: string, type: string): string {
@@ -30,6 +30,7 @@ function ruleToSQL(rule: QueryRule, schema: FieldSchema[]): string {
     case 'after':        return `${col} > ${fmt(value)}`;
     case 'between': {
       const [a, b] = value.split(',').map(s => s.trim());
+      if (!a || !b) return `${col} BETWEEN ? AND ?`;
       return `${col} BETWEEN ${fmt(a)} AND ${fmt(b)}`;
     }
     case 'in array': {
@@ -87,6 +88,7 @@ function ruleToMongo(rule: QueryRule, schema: FieldSchema[]): Record<string, unk
     case 'after':        return { [col]: { $gt: value } };
     case 'between': {
       const [a, b] = value.split(',').map(s => s.trim());
+      if (!a || !b) return {};
       return { [col]: { $gte: field.type === 'number' ? Number(a) : a, $lte: field.type === 'number' ? Number(b) : b } };
     }
     case 'in array':     return { [col]: { $in: value.split(',').map(s => s.trim()) } };

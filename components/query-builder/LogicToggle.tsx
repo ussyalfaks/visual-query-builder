@@ -12,28 +12,32 @@ export const LogicToggle = memo(function LogicToggle({ groupId, logic }: Props) 
   const setLogic = useQueryStore(s => s.setLogic);
 
   return (
-    <div className="flex rounded-md border border-input overflow-hidden shrink-0" role="group" aria-label="Logic operator">
+    <div
+      className="inline-flex rounded overflow-hidden border border-border shrink-0 text-[11px] font-bold"
+      role="group"
+      aria-label="Logic operator"
+    >
       <button
         onClick={() => setLogic(groupId, 'AND')}
-        className={cn(
-          'px-3 py-1 text-xs font-semibold transition-colors focus:outline-none',
-          logic === 'AND'
-            ? 'bg-blue-500 text-white'
-            : 'bg-background text-muted-foreground hover:bg-muted'
-        )}
         aria-pressed={logic === 'AND'}
+        className={cn(
+          'px-3 py-1 transition-colors border-r border-border',
+          logic === 'AND'
+            ? 'bg-accent-subtle text-accent'
+            : 'bg-surface-raised text-subtle hover:text-muted-foreground'
+        )}
       >
         AND
       </button>
       <button
         onClick={() => setLogic(groupId, 'OR')}
-        className={cn(
-          'px-3 py-1 text-xs font-semibold transition-colors focus:outline-none',
-          logic === 'OR'
-            ? 'bg-amber-500 text-white'
-            : 'bg-background text-muted-foreground hover:bg-muted'
-        )}
         aria-pressed={logic === 'OR'}
+        className={cn(
+          'px-3 py-1 transition-colors',
+          logic === 'OR'
+            ? 'bg-or-bg text-or-text'
+            : 'bg-surface-raised text-subtle hover:text-muted-foreground'
+        )}
       >
         OR
       </button>

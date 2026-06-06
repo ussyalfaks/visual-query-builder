@@ -7,7 +7,7 @@ export function validateRule(rule: QueryRule, schema: FieldSchema[]): string | n
 
   if (NO_VALUE_OPERATORS.includes(rule.operator)) return null;
 
-  if (!rule.value && !['in array', 'not in array'].includes(rule.operator)) {
+  if (!rule.value && !['in array', 'not in array', 'between'].includes(rule.operator)) {
     return 'Value is required';
   }
 
@@ -16,10 +16,10 @@ export function validateRule(rule: QueryRule, schema: FieldSchema[]): string | n
       return `"${rule.operator}" cannot be used with numeric fields`;
     }
     if (rule.operator === 'between') {
-      const parts = rule.value.split(',').map(s => s.trim());
-      if (parts.length !== 2 || parts.some(p => !p)) return 'Enter two values separated by comma';
-      if (parts.some(p => isNaN(Number(p)))) return 'Both values must be numbers';
-      if (Number(parts[0]) >= Number(parts[1])) return 'First value must be less than second';
+      const [a, b] = rule.value.split(',').map(s => s.trim());
+      if (!a || !b) return null;
+      if (isNaN(Number(a)) || isNaN(Number(b))) return 'Both values must be numbers';
+      if (Number(a) >= Number(b)) return 'First value must be less than second';
     } else if (rule.value && isNaN(Number(rule.value))) {
       return 'Must be a number';
     }
@@ -30,10 +30,10 @@ export function validateRule(rule: QueryRule, schema: FieldSchema[]): string | n
       return `"${rule.operator}" cannot be used with date fields`;
     }
     if (rule.operator === 'between') {
-      const parts = rule.value.split(',').map(s => s.trim());
-      if (parts.length !== 2 || parts.some(p => !p)) return 'Enter two dates separated by comma';
-      if (parts.some(p => isNaN(Date.parse(p)))) return 'Invalid date format';
-      if (new Date(parts[0]) >= new Date(parts[1])) return 'Start date must be before end date';
+      const [a, b] = rule.value.split(',').map(s => s.trim());
+      if (!a || !b) return null;
+      if (isNaN(Date.parse(a)) || isNaN(Date.parse(b))) return 'Invalid date format';
+      if (new Date(a) >= new Date(b)) return 'Start date must be before end date';
     } else if (rule.value && isNaN(Date.parse(rule.value))) {
       return 'Invalid date';
     }
