@@ -1,18 +1,11 @@
 'use client';
 import { memo, useCallback } from 'react';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
+  DndContext, closestCenter, KeyboardSensor,
+  PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
@@ -31,29 +24,31 @@ interface Props {
   dragHandleAttributes?: DraggableAttributes;
 }
 
-const DEPTH_COLORS = [
-  'border-blue-200 dark:border-blue-800',
-  'border-amber-200 dark:border-amber-800',
-  'border-green-200 dark:border-green-800',
-  'border-purple-200 dark:border-purple-800',
-  'border-pink-200 dark:border-pink-800',
-];
+const LOGIC_BORDER = {
+  AND: 'border-accent-subtle',
+  OR: 'border-or-border',
+};
 
-const DEPTH_BG = [
-  '',
-  'bg-muted/20',
-  'bg-muted/30',
-  'bg-muted/40',
-  'bg-muted/50',
-];
+const LOGIC_HEADER_BG = {
+  AND: 'bg-accent-subtle/20',
+  OR: 'bg-or-subtle',
+};
 
-// This component renders itself recursively for unlimited nesting depth.
+const LOGIC_HEADER_BORDER = {
+  AND: 'border-accent-subtle',
+  OR: 'border-or-border',
+};
+
+const DEPTH_BG = ['', 'bg-surface/30', 'bg-surface/50', 'bg-surface/70', 'bg-surface'];
+
 export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragHandleListeners, dragHandleAttributes }: Props) {
   const { addRule, addGroup, removeGroup, reorderRules, reorderGroups, toggleCollapse, collapsed, errors } = useQueryStore();
 
   const isCollapsed = collapsed.has(group.id);
   const totalItems = group.rules.length + group.groups.length;
-  const borderClass = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
+  const borderClass = LOGIC_BORDER[group.logic];
+  const headerBgClass = LOGIC_HEADER_BG[group.logic];
+  const headerBorderClass = LOGIC_HEADER_BORDER[group.logic];
   const bgClass = DEPTH_BG[Math.min(depth, DEPTH_BG.length - 1)];
 
   const sensors = useSensors(
@@ -66,9 +61,7 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
     if (!over || active.id === over.id) return;
     const fromIndex = group.rules.findIndex(r => r.id === active.id);
     const toIndex = group.rules.findIndex(r => r.id === over.id);
-    if (fromIndex !== -1 && toIndex !== -1) {
-      reorderRules(group.id, fromIndex, toIndex);
-    }
+    if (fromIndex !== -1 && toIndex !== -1) reorderRules(group.id, fromIndex, toIndex);
   }, [group.id, group.rules, reorderRules]);
 
   const groupSensors = useSensors(
@@ -81,9 +74,7 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
     if (!over || active.id === over.id) return;
     const fromIndex = group.groups.findIndex(g => g.id === active.id);
     const toIndex = group.groups.findIndex(g => g.id === over.id);
-    if (fromIndex !== -1 && toIndex !== -1) {
-      reorderGroups(group.id, fromIndex, toIndex);
-    }
+    if (fromIndex !== -1 && toIndex !== -1) reorderGroups(group.id, fromIndex, toIndex);
   }, [group.id, group.groups, reorderGroups]);
 
   const handleAddRule = useCallback(() => addRule(group.id), [group.id, addRule]);
@@ -94,30 +85,33 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
   return (
     <div className={cn('rounded-lg border', borderClass, bgClass)}>
       {/* Group header */}
-      <div className={cn('flex items-center gap-2 px-3 py-2', !isCollapsed && 'border-b', borderClass)}>
-        {/* Drag handle — present on non-root groups via SortableGroup */}
+      <div className={cn(
+        'flex items-center gap-2 px-3 py-2',
+        headerBgClass,
+        !isCollapsed && cn('border-b', headerBorderClass)
+      )}>
         {dragHandleListeners && (
           <button
             {...dragHandleAttributes}
             {...dragHandleListeners}
-            className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing shrink-0 touch-none"
+            className="text-subtle hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0 touch-none"
             aria-label="Drag group to reorder"
           >
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         )}
+
         <LogicToggle groupId={group.id} logic={group.logic} />
 
         <button
           onClick={handleToggle}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 text-xs text-subtle hover:text-muted-foreground transition-colors"
           aria-expanded={!isCollapsed}
           aria-label={isCollapsed ? 'Expand group' : 'Collapse group'}
         >
           {isCollapsed
             ? <ChevronRight className="h-3.5 w-3.5" />
-            : <ChevronDown className="h-3.5 w-3.5" />
-          }
+            : <ChevronDown className="h-3.5 w-3.5" />}
           <span>{totalItems} condition{totalItems !== 1 ? 's' : ''}</span>
         </button>
 
@@ -126,7 +120,7 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
         {depth > 0 && (
           <button
             onClick={handleRemove}
-            className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+            className="text-subtle hover:text-destructive transition-colors p-1 rounded"
             aria-label="Remove group"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -134,7 +128,6 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
         )}
       </div>
 
-      {/* Group-level validation error */}
       {errors[group.id] && (
         <div className="mx-3 mt-2 flex items-center gap-1.5 text-xs text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -142,7 +135,6 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
         </div>
       )}
 
-      {/* Group body — grid-rows transition provides smooth CSS collapse animation */}
       <div
         className={cn(
           'grid transition-all duration-200 ease-in-out',
@@ -152,7 +144,6 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
       >
         <div className="overflow-hidden">
           <div className="p-3 flex flex-col gap-2">
-            {/* Drag-and-drop sortable rules */}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={group.rules.map(r => r.id)} strategy={verticalListSortingStrategy}>
                 {group.rules.map(rule => (
@@ -161,7 +152,6 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
               </SortableContext>
             </DndContext>
 
-            {/* RECURSIVE: sub-groups sortable via their own DnD context */}
             <DndContext sensors={groupSensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd}>
               <SortableContext items={group.groups.map(g => g.id)} strategy={verticalListSortingStrategy}>
                 {group.groups.map(subGroup => (
@@ -170,18 +160,17 @@ export const ConditionGroup = memo(function ConditionGroup({ group, depth, dragH
               </SortableContext>
             </DndContext>
 
-            {/* Action buttons */}
             <div className="flex gap-2 pt-1">
               <button
                 onClick={handleAddRule}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-md px-3 py-1.5 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-subtle hover:text-muted-foreground border border-dashed border-border hover:border-muted-foreground rounded-md px-3 py-1.5 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add condition
               </button>
               <button
                 onClick={handleAddGroup}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border hover:border-foreground rounded-md px-3 py-1.5 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-subtle hover:text-muted-foreground border border-dashed border-border hover:border-muted-foreground rounded-md px-3 py-1.5 transition-colors"
               >
                 <FolderPlus className="h-3.5 w-3.5" />
                 Add group
