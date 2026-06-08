@@ -10,10 +10,6 @@ function applyRule(row: Record<string, unknown>, rule: QueryRule, schema: FieldS
   const strVal = value.toLowerCase();
 
   switch (operator) {
-    case 'is empty':
-      return rawValue === null || rawValue === undefined || rawValue === '';
-    case 'is not empty':
-      return rawValue !== null && rawValue !== undefined && rawValue !== '';
     case 'equals':
       return String(rawValue) === value;
     case 'not equals':

@@ -17,8 +17,6 @@ function ruleToSQL(rule: QueryRule, schema: FieldSchema[]): string {
   const fmt = (v: string) => fmtSQLVal(v, field.type);
 
   switch (operator) {
-    case 'is empty':     return `${col} IS NULL`;
-    case 'is not empty': return `${col} IS NOT NULL`;
     case 'equals':       return `${col} = ${fmt(value)}`;
     case 'not equals':   return `${col} != ${fmt(value)}`;
     case 'contains':     return `${col} LIKE ${fmt('%' + value + '%')}`;
@@ -75,8 +73,6 @@ function ruleToMongo(rule: QueryRule, schema: FieldSchema[]): Record<string, unk
   const numVal = Number(value);
 
   switch (operator) {
-    case 'is empty':     return { [col]: { $in: [null, ''] } };
-    case 'is not empty': return { [col]: { $nin: [null, ''] } };
     case 'equals':       return { [col]: field.type === 'number' ? numVal : value };
     case 'not equals':   return { [col]: { $ne: field.type === 'number' ? numVal : value } };
     case 'contains':     return { [col]: { $regex: value, $options: 'i' } };

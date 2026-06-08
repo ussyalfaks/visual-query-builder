@@ -13,10 +13,10 @@ export const SCHEMA: FieldSchema[] = [
 ];
 
 export const OPERATORS_BY_TYPE: Record<string, Operator[]> = {
-  string: ['equals', 'not equals', 'contains', 'starts with', 'ends with', 'regex', 'is empty', 'is not empty'],
-  number: ['equals', 'not equals', 'greater than', 'less than', 'between', 'is empty', 'is not empty'],
-  enum:   ['equals', 'not equals', 'in array', 'not in array', 'is empty', 'is not empty'],
-  date:   ['equals', 'before', 'after', 'between', 'is empty', 'is not empty'],
+  string: ['equals', 'not equals', 'contains', 'starts with', 'ends with', 'regex'],
+  number: ['equals', 'not equals', 'greater than', 'less than', 'between'],
+  enum:   ['equals', 'not equals', 'in array', 'not in array'],
+  date:   ['equals', 'before', 'after', 'between'],
   boolean: ['equals', 'not equals'],
 };
 
@@ -31,11 +31,9 @@ export const OPERATOR_LABELS: Record<Operator, string> = {
   'between': 'between',
   'in array': 'in',
   'not in array': 'not in',
-  'is empty': 'is empty',
-  'is not empty': 'is not empty',
   'before': 'before',
   'after': 'after',
   'regex': 'matches regex',
 };
 
-export const NO_VALUE_OPERATORS: Operator[] = ['is empty', 'is not empty'];
+export const NO_VALUE_OPERATORS: Operator[] = [];

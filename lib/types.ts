@@ -13,8 +13,6 @@ export type Operator =
   | 'between'
   | 'in array'
   | 'not in array'
-  | 'is empty'
-  | 'is not empty'
   | 'before'
   | 'after'
   | 'regex';
