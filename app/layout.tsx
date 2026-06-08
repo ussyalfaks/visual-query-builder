@@ -6,13 +6,13 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
 
 export const metadata: Metadata = {
-  title: 'Visual Query Builder',
-  description: 'Build complex database queries visually — no SQL required.',
+  title: 'Visual Query Builder — No SQL required',
+  description: 'Construct complex nested database filters visually. Drag-and-drop conditions, live SQL preview, and JSON export. No SQL knowledge needed.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}>
         {children}
       </body>
